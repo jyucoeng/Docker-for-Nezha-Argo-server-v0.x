@@ -134,6 +134,8 @@ Argo 隧道认证方式有 json 和 token，使用两个方式其中之一。推
   | REVERSE_PROXY_MODE  | 否 | 默认使用 Caddy 应用来反代，这时可以不填写该变量；如需 Nginx 或 gRPCwebProxy 反代，请设置该值为 `nginx ` 或 `grpcwebproxy` |
   | ARGO_AUTH           | 是 | Json: 从 https://fscarmen.cloudflare.now.cc 获取的 Argo Json<br> Token: 从 Cloudflare 官网获取 |
   | ARGO_DOMAIN         | 是 | Argo 域名 |
+  | BACKUP_TIME         | 否 | 备份时间的 cron 表达式，默认为 `0 4 * * *`（每天凌晨4点备份）。例如 `0 */2 * * *` 表示每2小时备份一次 |
+  | BACKUP_DAYS         | 否 | 备份保留天数，默认为 `10`。设置备份数据保留多少天内的文件 |
   | NO_AUTO_RENEW       | 否 | 默认不需要该变量，即每天定时同步在线最新的备份和还原脚本。如不需要该功能，设置此变量，并赋值为 `1` | 
 
 Koyeb
@@ -169,6 +171,8 @@ docker run -dit \
            -e ARGO_DOMAIN=<填自定义的> \
            -e GH_BACKUP_USER=<选填，选填，选填! 如与 GH_USER 一致，可以不要该环境变量> \
            -e REVERSE_PROXY_MODE=<选填，选填，选填! 如想用 Nginx 或 gRPCwebProxy 替代 Caddy 反代的话，请设置该变量并赋值为 `nginx` 或 `grpcwebproxy`> \
+           -e BACKUP_TIME=<选填，选填，选填! Cron 表达式，默认 `0 4 * * *`，例如 `0 */2 * * *` 表示每2小时备份一次> \
+           -e BACKUP_DAYS=<选填，选填，选填! 备份保留天数，默认 `10`> \
            -e NO_AUTO_RENEW=<选填，选填，选填! 如果不需要自动在线同步最新的 backup.sh 和 restore.sh，请设置该变量并赋值为 `1`> 
            fscarmen/argo-nezha
 ```
@@ -198,6 +202,8 @@ services:
             - ARGO_DOMAIN=<填自定义的>
             - GH_BACKUP_USER=<选填，选填，选填! 如与 GH_USER 一致，可以不要该环境变量>
             - REVERSE_PROXY_MODE=<选填，选填，选填! 如想用 Nginx 或 gRPCwebProxy 替代 Caddy 反代的话，请设置该变量并赋值为 `nginx` 或 `grpcwebproxy`>
+            - BACKUP_TIME=<选填，选填，选填! Cron 表达式，默认 `0 4 * * *`，例如 `0 */2 * * *` 表示每2小时备份一次>
+            - BACKUP_DAYS=<选填，选填，选填! 备份保留天数，默认 `10`>
             - NO_AUTO_RENEW=<选填，选填，选填! 如果不需要自动在线同步最新的 backup.sh 和 restore.sh，请设置该变量并赋值为 `1`>
 ```
 
@@ -292,6 +298,7 @@ tar czvf dashboard.tar.gz /dashboard
 
 
 ## 鸣谢下列作者的文章和项目:
+* 感谢 pingmike2 的 Docker-for-Nezha-Argo-server-v0.x 项目: https://github.com/pingmike2/Docker-for-Nezha-Argo-server-v0.x （本项目基于此项目进行改进和优化）
 * 热心的朝阳群众 Robin，讨论哪吒服务端与客户端的关系，从而诞生了此项目
 * 哪吒官网: https://nezha.wiki/ , TG 群: https://t.me/nezhamonitoring
 * 共穷国际老中医: http://solitud.es/
