@@ -141,8 +141,8 @@ if [ -e $TEMP_DIR/backup.tar.gz ]; then
   tar xzvf $TEMP_DIR/backup.tar.gz -C $TEMP_DIR ${CUSTOM_FULL_PATH[@]} ${FILE_PATH}data
   echo -e "↑↑↑↑↑↑↑↑↑↑ Restore-file list ↑↑↑↑↑↑↑↑↑↑\n\n"
 
-  # 还原面板配置的最新信息
-  sed -i "s@HTTPPort:.*@$CONFIG_HTTPPORT@; s@Language:.*@$CONFIG_LANGUAGE@; s@^GRPCPort:.*@$CONFIG_GRPCPORT@; s@gGRPCHost:.*@I$CONFIG_GRPCHOST@; s@ProxyGRPCPort:.*@$CONFIG_PROXYGRPCPORT@; s@Type:.*@$CONFIG_TYPE@; s@Admin:.*@$CONFIG_ADMIN@; s@ClientID:.*@$CONFIG_CLIENTID@; s@ClientSecret:.*@$CONFIG_CLIENTSECRET@I" ${TEMP_DIR}/${FILE_PATH}data/config.yaml
+  # 还原面板配置的最新信息（I 标志为大小写不敏感，兼容新版小写键名 config；修复旧版 GRPCHost 替换无效的 bug）
+  sed -i "s@HTTPPort:.*@$CONFIG_HTTPPORT@I; s@Language:.*@$CONFIG_LANGUAGE@I; s@GRPCPort:.*@$CONFIG_GRPCPORT@I; s@GRPCHost:.*@$CONFIG_GRPCHOST@I; s@ProxyGRPCPort:.*@$CONFIG_PROXYGRPCPORT@I; s@Type:.*@$CONFIG_TYPE@I; s@Admin:.*@$CONFIG_ADMIN@I; s@ClientID:.*@$CONFIG_CLIENTID@I; s@ClientSecret:.*@$CONFIG_CLIENTSECRET@I" ${TEMP_DIR}/${FILE_PATH}data/config.yaml
 
   # 逻辑是安装首次使用备份文件里的主题信息，之后使用本地最新的主题信息和 MaxTCPPingValue, AvgPingCount
   [[ -n "$CONFIG_BRAND" && -n "$CONFIG_COOKIENAME" && -n "$CONFIG_THEME" ]] &&

@@ -288,6 +288,7 @@ EOF
 #!/usr/bin/env bash
 LOCAL_TOKEN=$LOCAL_TOKEN
 GH_PROXY=$GH_PROXY
+REPO_RAW=$REPO_RAW
 WORK_DIR=/dashboard
 TEMP_DIR=/tmp/renew
 
