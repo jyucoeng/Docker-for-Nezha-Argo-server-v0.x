@@ -120,10 +120,12 @@ elif [ -z "$1" ]; then
   FILE=${BACKUP_FILE_LIST[$((CHOOSE-1))]}
 fi
 
+hint "\n发现线上备份: $FILE \n"
 DOWNLOAD_URL=https://raw.githubusercontent.com/$GH_BACKUP_USER/$GH_REPO/main/$FILE
 wget --header="Authorization: token $GH_PAT" --header='Accept: application/vnd.github.v3.raw' -O $TEMP_DIR/backup.tar.gz ${GH_PROXY}${DOWNLOAD_URL}
 
 if [ -e $TEMP_DIR/backup.tar.gz ]; then
+  hint "\n正在恢复备份: $FILE \n"
   if [ "$IS_DOCKER" = 1 ]; then
     hint "\n$(supervisorctl stop agent nezha grpcproxy)\n"
   else
@@ -176,6 +178,7 @@ if [ -e $TEMP_DIR/backup.tar.gz ]; then
     hint "\n Start Nezha-dashboard \n" && cmd_systemctl enable >/dev/null 2>&1
   fi
   sleep 3
+  info "\n还原完成: $FILE \n"
 else
   warning "\n Failed to download backup file! \n"
 fi
