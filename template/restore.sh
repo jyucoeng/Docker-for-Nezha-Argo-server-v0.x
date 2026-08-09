@@ -57,6 +57,8 @@ ABC
   fi
 }
 
+hint "\n========== 开始还原检查 ($(date '+%F %T')) ========== \n"
+
 # 在本地有不备份标志文件时，不执行备份操作，等待10分钟。触发该标志场景：1. README.md 文件内容包含关键词 backup，2. backup.sh 脚本被手动执行完成后保持 9 分钟。
 if [ -e $NO_ACTION_FLAG* ]; then
   FLAG_STATUS=$(ls $NO_ACTION_FLAG*)
@@ -70,12 +72,14 @@ if [ -e $NO_ACTION_FLAG* ]; then
 fi
 
 # 获取 Github 上的 README.md 文件内容
-ONLINE="$(wget -qO- --header="Authorization: token $GH_PAT" ${GH_PROXY}https://raw.githubusercontent.com/$GH_BACKUP_USER/$GH_REPO/main/README.md | sed "/^$/d" | head -n 1)"
+ONLINE="$(wget -qO- --timeout=10 --tries=1 --header="Authorization: token $GH_PAT" ${GH_PROXY}https://raw.githubusercontent.com/$GH_BACKUP_USER/$GH_REPO/main/README.md | sed "/^$/d" | head -n 1)"
+hint "\n线上备份记录: ${ONLINE:-<连接失败或为空>} \n"
 
 # 若用户在 Github 的 README.md 里改了内容包含关键词 backup，则触发实时备份；为解决 Github cdn 导致获取文件内容来回跳的问题，设置自锁并检测到备份文件后延时3分钟断开（3次 运行 restore.sh 的时间)
 if [ -z "$ONLINE" ]; then
   error "\n Failed to connect to Github or README.md is empty! \n"
 elif grep -qi 'backup' <<< "$ONLINE"; then
+  hint "\n检测到手动备份指令, 触发实时备份 \n"
   [ ! -e ${NO_ACTION_FLAG}* ] && { $WORK_DIR/backup.sh; exit 0; }
 fi
 
@@ -102,7 +106,7 @@ fi
 
 # 根据传参标志作相应的处理
 if [ "$1" = a ]; then
-  [ "$ONLINE" = "$(cat $WORK_DIR/dbfile)" ] && exit
+  [ "$ONLINE" = "$(cat $WORK_DIR/dbfile)" ] && { hint "\n本地记录与线上一致, 无需还原 \n"; exit; }
   [[ "$ONLINE" =~ tar\.gz$ && "$ONLINE" != "$(cat $WORK_DIR/dbfile)" ]] && FILE="$ONLINE" || exit
 elif [ "$1" = f ]; then
   [[ "$ONLINE" =~ tar\.gz$ ]] && FILE="$ONLINE" || exit

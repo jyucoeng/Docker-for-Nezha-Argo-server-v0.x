@@ -62,25 +62,31 @@ touch $(awk -F '=' '/NO_ACTION_FLAG/{print $2; exit}' $WORK_DIR/restore.sh)1
 [ "$1" = 'a' ] && WAY=Scheduled || WAY=Manualed
 [ "$1" = 'f' ] && WAY=Manualed && FORCE_UPDATE=true
 
+hint "\n========== 开始备份 ($(date '+%F %T')) ========== \n"
+
 # 检查更新面板主程序 app 及 cloudflared
 cd $WORK_DIR
 DASHBOARD_NOW=$(./app -v)
-DASHBOARD_LATEST=$(wget -qO- "https://api.github.com/repos/naiba/nezha/releases/latest" | awk -F '"' '/"tag_name"/{print $4}')
+DASHBOARD_LATEST=$(wget -qO- --timeout=10 --tries=1 "https://api.github.com/repos/naiba/nezha/releases/latest" | awk -F '"' '/"tag_name"/{print $4}')
 [[ "$DASHBOARD_LATEST" =~ ^v([0-9]{1,3}\.){2}[0-9]{1,3}$ && "$DASHBOARD_NOW" != "$DASHBOARD_LATEST" ]] && DASHBOARD_UPDATE=true
 
 CLOUDFLARED_NOW=$(./cloudflared -v | awk '{for (i=0; i<NF; i++) if ($i=="version") {print $(i+1)}}')
-CLOUDFLARED_LATEST=$(wget -qO- https://api.github.com/repos/cloudflare/cloudflared/releases/latest | awk -F '"' '/tag_name/{print $4}')
+CLOUDFLARED_LATEST=$(wget -qO- --timeout=10 --tries=1 https://api.github.com/repos/cloudflare/cloudflared/releases/latest | awk -F '"' '/tag_name/{print $4}')
 [[ "$CLOUDFLARED_LATEST" =~ ^20[0-9]{2}\.[0-9]{1,2}\.[0-9]+$ && "$CLOUDFLARED_NOW" != "$CLOUDFLARED_LATEST" ]] && CLOUDFLARED_UPDATE=true
+
+[ -n "$DASHBOARD_UPDATE" ] && hint "\n发现面板新版本: $DASHBOARD_LATEST \n"
+[ -n "$CLOUDFLARED_UPDATE" ] && hint "\n发现 cloudflared 新版本: $CLOUDFLARED_LATEST \n"
 
 # 检测是否有设置备份数据
 if [[ -n "$GH_REPO" && -n "$GH_BACKUP_USER" && -n "$GH_EMAIL" && -n "$GH_PAT" ]]; then
-  IS_PRIVATE="$(wget -qO- --header="Authorization: token $GH_PAT" https://api.github.com/repos/$GH_BACKUP_USER/$GH_REPO | sed -n '/"private":/s/.*:[ ]*\([^,]*\),/\1/gp')"
+  IS_PRIVATE="$(wget -qO- --timeout=10 --tries=1 --header="Authorization: token $GH_PAT" https://api.github.com/repos/$GH_BACKUP_USER/$GH_REPO | sed -n '/"private":/s/.*:[ ]*\([^,]*\),/\1/gp')"
   if [ "$?" != 0 ]; then
     warning "\n Could not connect to Github. Stop backup. \n"
   elif [ "$IS_PRIVATE" != true ]; then
     warning "\n This is not exist nor a private repository. \n"
   else
     IS_BACKUP=true
+    hint "\n备份仓库连接正常: $GH_BACKUP_USER/$GH_REPO \n"
   fi
 fi
 
@@ -125,6 +131,7 @@ if [[ "${DASHBOARD_UPDATE}${CLOUDFLARED_UPDATE}${IS_BACKUP}${FORCE_UPDATE}" =~ t
 
   # 克隆备份仓库，压缩备份文件，上传更新
   if [ "$IS_BACKUP" = 'true' ]; then
+    hint "\n正在准备备份数据 ... \n"
     # 克隆现有备份库
     [ -d /tmp/$GH_REPO ] && rm -rf /tmp/$GH_REPO
     git clone https://$GH_PAT@github.com/$GH_BACKUP_USER/$GH_REPO.git --depth 1 --quiet /tmp/$GH_REPO
@@ -133,10 +140,10 @@ if [[ "${DASHBOARD_UPDATE}${CLOUDFLARED_UPDATE}${IS_BACKUP}${FORCE_UPDATE}" =~ t
     if [ -d /tmp/$GH_REPO ]; then
       TIME=$(date "+%Y-%m-%d-%H:%M:%S")
       echo "↓↓↓↓↓↓↓↓↓↓ dashboard-$TIME.tar.gz list ↓↓↓↓↓↓↓↓↓↓"
-      find resource/ -type d -name "*custom*" | tar czvf /tmp/$GH_REPO/dashboard-$TIME.tar.gz -T- data/
+      find resource/ -type d -name "*custom*" 2>/dev/null | tar czvf /tmp/$GH_REPO/dashboard-$TIME.tar.gz -T- data/
       echo -e "↑↑↑↑↑↑↑↑↑↑ dashboard-$TIME.tar.gz list ↑↑↑↑↑↑↑↑↑↑\n\n"
 
-      # 更新备份 Github 库，删除 5 天前的备份
+      # 更新备份 Github 库，删除 $DAYS 天前的备份
       cd /tmp/$GH_REPO
       [ -e ./.git/index.lock ] && rm -f ./.git/index.lock
       echo "dashboard-$TIME.tar.gz" > README.md
@@ -146,7 +153,8 @@ if [[ "${DASHBOARD_UPDATE}${CLOUDFLARED_UPDATE}${IS_BACKUP}${FORCE_UPDATE}" =~ t
       git checkout --orphan tmp_work
       git add .
       git commit -m "$WAY at $TIME ."
-      git push -f -u origin HEAD:main --quiet
+      hint "\n正在上传备份到 GitHub ... \n"
+      timeout 300 git push -f -u origin HEAD:main --quiet
       IS_UPLOAD="$?"
       cd ..
       rm -rf $GH_REPO
@@ -155,7 +163,7 @@ if [[ "${DASHBOARD_UPDATE}${CLOUDFLARED_UPDATE}${IS_BACKUP}${FORCE_UPDATE}" =~ t
         info "\n Succeed to upload the backup files dashboard-$TIME.tar.gz to Github.\n"
       else
         rm -f $(awk -F '=' '/NO_ACTION_FLAG/{print $2; exit}' $WORK_DIR/restore.sh)*
-        hint "\n Failed to upload the backup files dashboard-$TIME.tar.gz to Github.\n"
+        hint "\n 上传失败 (退出码 $IS_UPLOAD, 124=超时): dashboard-$TIME.tar.gz \n"
       fi
     fi
   fi

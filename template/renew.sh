@@ -20,10 +20,12 @@ trap "rm -rf $TEMP_DIR; echo -e '\n' ;exit" INT QUIT TERM EXIT
 mkdir -p $TEMP_DIR
 
 # 在线更新 renew.sh，backup.sh 和 restore.sh 文件
+hint "\n========== 开始同步脚本 ($(date '+%F %T')) ========== \n"
 for i in {renew,backup,restore}; do
   if [ -s $WORK_DIR/$i.sh ]; then
+    hint "\n正在同步 $i.sh ... \n"
     sed -n '1,/^########/p' $WORK_DIR/$i.sh > $TEMP_DIR/$i.sh
-    wget -qO- ${GH_PROXY}${REPO_RAW}/template/$i.sh | sed '1,/^########/d' >> $TEMP_DIR/$i.sh
+    wget -qO- --timeout=10 --tries=1 ${GH_PROXY}${REPO_RAW}/template/$i.sh | sed '1,/^########/d' >> $TEMP_DIR/$i.sh
     [ $(wc -l $TEMP_DIR/$i.sh | awk '{print $1}') -gt 20 ] && chmod +x $TEMP_DIR/$i.sh && mv -f $TEMP_DIR/$i.sh $WORK_DIR/ && info "\n Update $i.sh Successful. \n" || warning "\n Update $i.sh failed.\n" 
   fi
 done
