@@ -121,6 +121,7 @@ EOF
     echo "$version"
    }
    if [ "$IS_UPDATE" = 'no' ]; then
+   DASH_VER=${DASH_VER:-$DASHBOARD_VERSION}
    DASH_VER=${DASH_VER:-'v0.17.9'}
    DASH_VER=$(add_v_prefix "$DASH_VER")
    echo "DASH_VER = $DASH_VER"
@@ -232,6 +233,7 @@ EOF
 
   # 设置备份相关的环境变量默认值
   BACKUP_TIME=${BACKUP_TIME:-"0 4 * * *"}
+  BACKUP_DAYS=${BACKUP_DAYS:-$BACKUP_NUM}
   BACKUP_DAYS=${BACKUP_DAYS:-"10"}
 
   # 生成 backup.sh 文件的步骤1 - 设置环境变量

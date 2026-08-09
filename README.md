@@ -16,13 +16,13 @@ F大原版简单修改，参数一致,可以直接把镜像替换成这个，已
 
 #### 2.变量AGENT_VER，可选，指定哪吒客户端版本，不填则使用默认v0.17.5
 
-#### 3.变量DASH_VER，可选，指定哪吒服务端版本,不填则使用默认v0.17.9
+#### 3.变量DASHBOARD_VERSION（旧名 DASH_VER 仍兼容），可选，指定哪吒服务端版本,不填则使用默认v0.17.9
 
 #### 4.如果碰到本地不亮，可以设置变量NO_SUIJI，值为任意哪吒key,然后进入哪吒面板后台设置本地的哪吒key为前面设置的NO_SUIJI值即可
 
 #### 5.变量BACKUP_TIME，可选，设置备份时间的cron表达式，默认为`0 4 * * *`（每天凌晨4点备份），如果是northflank这类容器，建议改成例如`0 */2 * * *`表示每2小时备份一次
 
-#### 6.变量BACKUP_DAYS，可选，设置备份保留天数，默认为`10`，保留指定天数内的备份文件
+#### 6.变量BACKUP_NUM（旧名 BACKUP_DAYS 仍兼容），可选，设置备份文件保留个数，默认为`10`，按备份文件个数保留最新的备份，而非按天数。例如备份时间为每2小时一次，保留80个约等于6.7天
 
 #### docker镜像(默认面板端口80):
 ```
@@ -139,7 +139,7 @@ Argo 隧道认证方式有 json 和 token，使用两个方式其中之一。推
   | ARGO_AUTH           | 是 | Json: 从 https://fscarmen.cloudflare.now.cc 获取的 Argo Json<br> Token: 从 Cloudflare 官网获取 |
   | ARGO_DOMAIN         | 是 | Argo 域名 |
   | BACKUP_TIME         | 否 | 备份时间的 cron 表达式，默认为 `0 4 * * *`（每天凌晨4点备份）。例如 `0 */2 * * *` 表示每2小时备份一次 |
-  | BACKUP_DAYS         | 否 | 备份保留天数，默认为 `10`。设置备份数据保留多少天内的文件 |
+  | BACKUP_NUM          | 否 | 备份文件保留个数（旧名 BACKUP_DAYS 仍兼容），默认为 `10`。按文件个数保留最新备份，非天数；如每2小时备份一次，保留80个约6.7天 |
   | NO_AUTO_RENEW       | 否 | 默认不需要该变量，即每天定时同步在线最新的备份和还原脚本。如不需要该功能，设置此变量，并赋值为 `1` | 
 
 Koyeb
@@ -176,7 +176,7 @@ docker run -dit \
            -e GH_BACKUP_USER=<选填，选填，选填! 如与 GH_USER 一致，可以不要该环境变量> \
            -e REVERSE_PROXY_MODE=<选填，选填，选填! 如想用 Nginx 或 gRPCwebProxy 替代 Caddy 反代的话，请设置该变量并赋值为 `nginx` 或 `grpcwebproxy`> \
            -e BACKUP_TIME=<选填，选填，选填! Cron 表达式，默认 `0 4 * * *`，例如 `0 */2 * * *` 表示每2小时备份一次> \
-           -e BACKUP_DAYS=<选填，选填，选填! 备份保留天数，默认 `10`> \
+           -e BACKUP_NUM=<选填，选填，选填! 备份文件保留个数，默认 `10`，旧名 BACKUP_DAYS 仍兼容> \
            -e NO_AUTO_RENEW=<选填，选填，选填! 如果不需要自动在线同步最新的 backup.sh 和 restore.sh，请设置该变量并赋值为 `1`> 
            fscarmen/argo-nezha
 ```
@@ -207,7 +207,7 @@ services:
             - GH_BACKUP_USER=<选填，选填，选填! 如与 GH_USER 一致，可以不要该环境变量>
             - REVERSE_PROXY_MODE=<选填，选填，选填! 如想用 Nginx 或 gRPCwebProxy 替代 Caddy 反代的话，请设置该变量并赋值为 `nginx` 或 `grpcwebproxy`>
             - BACKUP_TIME=<选填，选填，选填! Cron 表达式，默认 `0 4 * * *`，例如 `0 */2 * * *` 表示每2小时备份一次>
-            - BACKUP_DAYS=<选填，选填，选填! 备份保留天数，默认 `10`>
+            - BACKUP_NUM=<选填，选填，选填! 备份文件保留个数，默认 `10`，旧名 BACKUP_DAYS 仍兼容>
             - NO_AUTO_RENEW=<选填，选填，选填! 如果不需要自动在线同步最新的 backup.sh 和 restore.sh，请设置该变量并赋值为 `1`>
 ```
 
